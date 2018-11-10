@@ -1,42 +1,28 @@
-//setting up app
-const express = require('express');
-const app = express();
-app.get('/',(req,res)=>{
-	res.send("hello world")
+//set up the server
+const server = require('http').createServer()
+const io = require('socket.io')(server)
+
+// this function will handle the connections
+io.on('connection', function (client) {
+	console.log("new connection from", client.id)
+  client.on('send_message', function(msj){
+	console.log(msj)
+  })
+
+// default for this cases
+  client.on('disconnect', function () {
+    console.log('client disconnect...', client.id)
+  })
+
+  client.on('error', function (err) {
+    console.log('received error from client:', client.id)
+    console.log(err)
+  })
 })
-// setup sockets
-server = app.listen(3010)
-const io = require("socket.io")(server);
 
-io.on('connection', function(socket) {
-	console.log("New connecction, wuju!");
-
-	socket.on('disconnect', function () {
-		console.log('client disconnect...', client.id)
-		handleDisconnect()
-	})
-	
-	socket.on('error', function (err) {
-		console.log('received error from client:', client.id)
-		console.log(err)
-	})
+// server listen on port 3010
+server.listen(3010, function (err) {
+  if (err) throw err
+  console.log('listening on port 3010')
 })
-// var messages = [{
-// 	author: "Carlos",
-//     text: "Hola! que tal?"
-// },{
-// 	author: "Pepe",
-//     text: "Muy bien! y tu??"
-// },{
-// 	author: "Paco",
-//     text: "Genial!"
-// }];
 
-// server.listen(3010, function() {
-// 	console.log('Servidor corriendo en http://localhost:3010');
-// });
-
-// io.on('connection', function(socket) {
-// 	console.log('Un cliente se ha conectado');
-//     socket.emit('messages', messages);
-// });
