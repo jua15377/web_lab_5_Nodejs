@@ -9,11 +9,22 @@ var total_msj = 0
 // this function will handle the connections
 io.on('connection', async function (client) {
   console.log("new connection from", client.id)
+
+  // sent all the past messages to the client
+  try{
+    const response = await axios.get(url)
+    total_msj = response.data.length
+    console.log("sending past messages", total_msj)
+    client.emit("first_conn", response.data)
+  }
+  catch(e) {
+    console.error(e)
+  }
   // send message to the the API
   try{
-    client.on('send_message', function(st_id, nick, text){
+    client.on('send_message',async function(st_id, nick, text){
       // setting data
-      total_msj++
+      
       var data = new FormData()
       data.append('student_id', st_id)
       data.append('text', text)
@@ -22,21 +33,12 @@ io.on('connection', async function (client) {
         method:"POST",
         body: data
       }
-      fetch(url,otherParam)
+      console.log("pre fetch",total_msj)
+      const a = await fetch(url,otherParam)
+      console.log("post fetch",total_msj)
+      total_msj++
+      console.log("count post fetch",total_msj)
     })
-  }
-  catch(e) {
-		console.error(e)
-  }
-
-
-  // sent all the past messages to the client
-  try{
-      const response = await axios.get(url)
-      total_msj = response.data.length
-      console.log("sending past messages")
-      client.emit("first_conn", response.data)
-    
   }
   catch(e) {
 		console.error(e)
@@ -54,26 +56,34 @@ io.on('connection', async function (client) {
 })
 
 // server listen on port 3010
-server.listen(3011, function (err) {
+server.listen(3010, function (err) {
   if (err) throw err
-  console.log('listening on port 3011')
+  console.log('listening on port 3010')
 })
 
-setInterval(async function() {
-  // method to be executed
-  try {
-    const response = await axios.get(url)
-    const messages = response.data
-    if (messages.length !== total_msj) {
-      total_msj = messages.length
-      console.log("new message found:", messages[messages.length - 1])
-      io.emit('new_message', messages[messages.length - 1])
+async function chek_for_new_msj(){
+    // method to be executed
+    try {
+      const response = await axios.get(url)
+      const messages = response.data
+      if (messages.length !== total_msj) {
+        console.log("new message found:", messages[messages.length - 1])
+        io.emit('new_message', messages[messages.length - 1])
+        total_msj = messages.length
+      }
+    } 
+    catch(err) {
+      console.error(err)
     }
-  } 
-  catch(err) {
-    console.error(err)
-  }
-}, 500)
+}
+
+async function start(){
+  const response = await axios.get(url)
+  total_msj = response.data.length
+  setInterval(chek_for_new_msj, 500)
+}
+
+start()
 
 
 
